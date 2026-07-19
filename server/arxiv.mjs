@@ -27,8 +27,8 @@ function pickUa() {
   return USER_AGENTS[uaCursor];
 }
 
-const MAX_ATTEMPTS = isVercel ? 2 : 4;
-const FETCH_TIMEOUT = isVercel ? 8000 : 35000;
+const MAX_ATTEMPTS = isVercel ? 1 : 4;
+const FETCH_TIMEOUT = isVercel ? 5000 : 35000;
 
 function enqueueFetch(url) {
   const task = queueTail.then(async () => {
