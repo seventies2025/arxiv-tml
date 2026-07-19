@@ -30,35 +30,29 @@ function pickUa() {
 const MAX_ATTEMPTS = isVercel ? 1 : 4;
 const FETCH_TIMEOUT = isVercel ? 5000 : 35000;
 
-function enqueueFetch(url) {
-  const task = queueTail.then(async () => {
-    let lastError = null;
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      const wait = Math.max(0, MIN_INTERVAL_MS - (Date.now() - lastFetchAt));
-      if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
-      lastFetchAt = Date.now();
-      let res;
-      try {
-        res = await fetch(url, {
-          headers: { "User-Agent": pickUa() },
-          signal: AbortSignal.timeout(FETCH_TIMEOUT)
-        });
-      } catch (error) {
-        lastError = error;
-        if (attempt < MAX_ATTEMPTS) continue;
-        throw error;
-      }
-      if (res.ok) return res.text();
-      if (res.status === 429 && attempt < MAX_ATTEMPTS) {
-        lastError = new Error("arxiv_http_429");
-        continue;
-      }
-      throw new Error(`arxiv_http_${res.status}`);
+async function fetchArxiv(url) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    lastFetchAt = Date.now();
+    let res;
+    try {
+      res = await fetch(url, {
+        headers: { "User-Agent": pickUa() },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT)
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt < MAX_ATTEMPTS) continue;
+      throw error;
     }
-    throw lastError || new Error("arxiv_http_429");
-  });
-  queueTail = task.catch(() => {});
-  return task;
+    if (res.ok) return res.text();
+    if (res.status === 429 && attempt < MAX_ATTEMPTS) {
+      lastError = new Error("arxiv_http_429");
+      continue;
+    }
+    throw new Error(`arxiv_http_${res.status}`);
+  }
+  throw lastError || new Error("arxiv_http_429");
 }
 
 const __dirname = path.dirname(import.meta.url).replace("file://", "");
@@ -208,7 +202,7 @@ const TTL = {
 async function runQuery(params, ttlMs) {
   const query = new URLSearchParams(params).toString();
   return cachedJson(`query:${query}`, ttlMs, async () => {
-    const xml = await enqueueFetch(`${ARXIV_API}?${query}`);
+    const xml = await fetchArxiv(`${ARXIV_API}?${query}`);
     return parseFeed(xml);
   });
 }

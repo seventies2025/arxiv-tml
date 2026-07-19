@@ -2,25 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/topic.mjs",
-      "use": "@vercel/edge"
-    },
-    {
-      "src": "api/index.mjs",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 30
-      }
+      "src": "server/index.mjs",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/topic",
-      "dest": "api/topic.mjs"
-    },
-    {
       "src": "/(.*)",
-      "dest": "api/index.mjs"
+      "dest": "server/index.mjs"
     }
   ],
   "env": {
