@@ -305,18 +305,14 @@ async function handleRequest(req, res) {
 
 const server = createServer(handleRequest);
 
-if (process.env.NODE_ENV !== "production" || process.argv.includes("--dev")) {
-  server.listen(config.port, config.host, () => {
-    console.log(`arXiv-TML server running at http://${config.host}:${config.port}`);
-  });
+server.listen(config.port, config.host, () => {
+  console.log(`arXiv-TML server running at http://${config.host}:${config.port}`);
+});
 
-  process.on("SIGTERM", () => {
-    server.close(() => process.exit(0));
-  });
+process.on("SIGTERM", () => {
+  server.close(() => process.exit(0));
+});
 
-  process.on("SIGINT", () => {
-    server.close(() => process.exit(0));
-  });
-}
-
-export default handleRequest;
+process.on("SIGINT", () => {
+  server.close(() => process.exit(0));
+});
