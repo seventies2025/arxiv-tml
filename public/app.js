@@ -201,46 +201,58 @@ async function renderTopics() {
 async function renderTopic(topicId) {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  try {
-    const { topic, entries, total } = await fetchJson(`/api/topic?id=${topicId}&max=20`);
-    
-    if (!topic) {
-      app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">主题不存在</p>`;
-      return;
-    }
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const { topic, entries, total } = await fetchJson(`/api/topic?id=${topicId}&max=20`);
+      
+      if (!topic) {
+        app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">主题不存在</p>`;
+        return;
+      }
 
-    app.innerHTML = `
-      <div class="topic-header">
-        <div class="topic-icon" style="font-size:48px">${topic.icon}</div>
-        <h1 class="page-title">${topic.name}</h1>
-        <p class="page-subtitle">${topic.nameEn} · ${topic.description}</p>
-      </div>
-      <div class="papers-list">
-        ${entries.map(renderPaperRow).join("")}
-      </div>
-      ${total > 20 ? `<div class="pagination"><button onclick="loadMoreTopic('${topicId}', 20)">加载更多</button></div>` : ""}
-    `;
-  } catch {
-    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">加载失败，请稍后重试</p>`;
+      app.innerHTML = `
+        <div class="topic-header">
+          <div class="topic-icon" style="font-size:48px">${topic.icon}</div>
+          <h1 class="page-title">${topic.name}</h1>
+          <p class="page-subtitle">${topic.nameEn} · ${topic.description}</p>
+        </div>
+        <div class="papers-list">
+          ${entries.map(renderPaperRow).join("")}
+        </div>
+        ${total > 20 ? `<div class="pagination"><button onclick="loadMoreTopic('${topicId}', 20)">加载更多</button></div>` : ""}
+      `;
+      return;
+    } catch {
+      retries--;
+      if (retries >= 0) await new Promise(r => setTimeout(r, 1000));
+    }
   }
+  app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px"><button onclick="renderTopic('${topicId}')">点击重试</button></p>`;
 }
 
 async function renderClassics() {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  try {
-    const { entries } = await fetchJson("/api/classics");
-    
-    app.innerHTML = `
-      <h1 class="page-title">经典论文</h1>
-      <p class="page-subtitle">理论机器学习与量子机器学习领域的里程碑式著作</p>
-      <div class="classics-timeline">
-        ${entries.map(renderClassicItem).join("")}
-      </div>
-    `;
-  } catch {
-    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">加载失败，请稍后重试</p>`;
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const { entries } = await fetchJson("/api/classics");
+      
+      app.innerHTML = `
+        <h1 class="page-title">经典论文</h1>
+        <p class="page-subtitle">理论机器学习与量子机器学习领域的里程碑式著作</p>
+        <div class="classics-timeline">
+          ${entries.map(renderClassicItem).join("")}
+        </div>
+      `;
+      return;
+    } catch {
+      retries--;
+      if (retries >= 0) await new Promise(r => setTimeout(r, 1000));
+    }
   }
+  app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px"><button onclick="renderClassics()">点击重试</button></p>`;
 }
 
 async function renderDiscover() {
@@ -276,93 +288,111 @@ async function performDiscover() {
   const resultsContainer = document.getElementById("discoverResults");
   resultsContainer.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  try {
-    const { entries } = await fetchJson(`/api/discover?q=${encodeURIComponent(query)}&max=20`);
-    
-    if (entries.length === 0) {
-      resultsContainer.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">未找到相关论文</p>`;
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const { entries } = await fetchJson(`/api/discover?q=${encodeURIComponent(query)}&max=20`);
+      
+      if (entries.length === 0) {
+        resultsContainer.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">未找到相关论文</p>`;
+        return;
+      }
+      
+      resultsContainer.innerHTML = `
+        <h2 class="section-title">搜索结果：${query}</h2>
+        <div class="papers-list">
+          ${entries.map(renderPaperRow).join("")}
+        </div>
+      `;
       return;
+    } catch {
+      retries--;
+      if (retries >= 0) await new Promise(r => setTimeout(r, 1000));
     }
-    
-    resultsContainer.innerHTML = `
-      <h2 class="section-title">搜索结果：${query}</h2>
-      <div class="papers-list">
-        ${entries.map(renderPaperRow).join("")}
-      </div>
-    `;
-  } catch {
-    resultsContainer.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">搜索失败，请稍后重试</p>`;
   }
+  resultsContainer.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px"><button onclick="performDiscover('${query}', this.parentElement)">点击重试</button></p>`;
 }
 
 async function renderSearch(query) {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  try {
-    const { entries } = await fetchJson(`/api/search?q=${encodeURIComponent(query)}&max=20`);
-    
-    app.innerHTML = `
-      <h1 class="page-title">搜索结果</h1>
-      <p class="page-subtitle">"${query}"</p>
-      ${entries.length === 0 ? `<p style="text-align:center;color:var(--ink-3);padding:40px">未找到相关论文</p>` : `
-        <div class="papers-list">
-          ${entries.map(renderPaperRow).join("")}
-        </div>
-      `}
-    `;
-  } catch {
-    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">搜索失败，请稍后重试</p>`;
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const { entries } = await fetchJson(`/api/search?q=${encodeURIComponent(query)}&max=20`);
+      
+      app.innerHTML = `
+        <h1 class="page-title">搜索结果</h1>
+        <p class="page-subtitle">"${query}"</p>
+        ${entries.length === 0 ? `<p style="text-align:center;color:var(--ink-3);padding:40px">未找到相关论文</p>` : `
+          <div class="papers-list">
+            ${entries.map(renderPaperRow).join("")}
+          </div>
+        `}
+      `;
+      return;
+    } catch {
+      retries--;
+      if (retries >= 0) await new Promise(r => setTimeout(r, 1000));
+    }
   }
+  app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px"><button onclick="renderSearch('${query}')">点击重试</button></p>`;
 }
 
 async function renderPaper(id) {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  try {
-    const paper = await fetchJson(`/api/paper?id=${id}`);
-    
-    if (!paper) {
-      app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">论文不存在</p>`;
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const paper = await fetchJson(`/api/paper?id=${id}`);
+      
+      if (!paper) {
+        app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">论文不存在</p>`;
+        return;
+      }
+      
+      const isFavorite = favorites.has(paper.id);
+      
+      app.innerHTML = `
+        <div class="paper-detail">
+          <div class="paper-detail-main">
+            <h1 class="paper-detail-title">${paper.title}</h1>
+            ${paper.titleZh ? `<p class="paper-detail-title-zh">${paper.titleZh}</p>` : ""}
+            <p class="paper-detail-authors">${paper.authors.join(", ")}</p>
+            <div class="paper-detail-meta">
+              ${renderArxivId(paper.id, paper.version)}
+              <span class="paper-date">${formatDate(paper.published)}</span>
+              ${paper.categories.map(renderCategory).join("")}
+              ${paper.journalRef ? `<span class="paper-category">${paper.journalRef}</span>` : ""}
+            </div>
+            <p class="paper-detail-summary">${paper.summary}</p>
+            <div class="paper-detail-links">
+              <a href="${paper.links?.pdf || `https://arxiv.org/pdf/${paper.id}`}" target="_blank" class="primary">下载 PDF</a>
+              <a href="${paper.links?.abs || `https://arxiv.org/abs/${paper.id}`}" target="_blank" class="secondary">arXiv 页面</a>
+              <a href="${paper.links?.html || `https://arxiv.org/html/${paper.id}${paper.version || ""}`}" target="_blank" class="secondary">HTML 全文</a>
+            </div>
+          </div>
+          <div class="ai-panel">
+            <div class="ai-panel-header">
+              <h3 class="ai-panel-title">AI 解读</h3>
+              <button class="ai-panel-toggle" onclick="toggleExplain('${paper.id}')">生成解读</button>
+            </div>
+            <div class="ai-content" id="aiContent"></div>
+            <div class="ai-chat">
+              <input type="text" id="chatInput" placeholder="追问关于这篇论文的问题...">
+              <button onclick="sendChat('${paper.id}')">发送</button>
+            </div>
+          </div>
+        </div>
+      `;
       return;
+    } catch {
+      retries--;
+      if (retries >= 0) await new Promise(r => setTimeout(r, 1000));
     }
-    
-    const isFavorite = favorites.has(paper.id);
-    
-    app.innerHTML = `
-      <div class="paper-detail">
-        <div class="paper-detail-main">
-          <h1 class="paper-detail-title">${paper.title}</h1>
-          ${paper.titleZh ? `<p class="paper-detail-title-zh">${paper.titleZh}</p>` : ""}
-          <p class="paper-detail-authors">${paper.authors.join(", ")}</p>
-          <div class="paper-detail-meta">
-            ${renderArxivId(paper.id, paper.version)}
-            <span class="paper-date">${formatDate(paper.published)}</span>
-            ${paper.categories.map(renderCategory).join("")}
-            ${paper.journalRef ? `<span class="paper-category">${paper.journalRef}</span>` : ""}
-          </div>
-          <p class="paper-detail-summary">${paper.summary}</p>
-          <div class="paper-detail-links">
-            <a href="${paper.links?.pdf || `https://arxiv.org/pdf/${paper.id}`}" target="_blank" class="primary">下载 PDF</a>
-            <a href="${paper.links?.abs || `https://arxiv.org/abs/${paper.id}`}" target="_blank" class="secondary">arXiv 页面</a>
-            <a href="${paper.links?.html || `https://arxiv.org/html/${paper.id}${paper.version || ""}`}" target="_blank" class="secondary">HTML 全文</a>
-          </div>
-        </div>
-        <div class="ai-panel">
-          <div class="ai-panel-header">
-            <h3 class="ai-panel-title">AI 解读</h3>
-            <button class="ai-panel-toggle" onclick="toggleExplain('${paper.id}')">生成解读</button>
-          </div>
-          <div class="ai-content" id="aiContent"></div>
-          <div class="ai-chat">
-            <input type="text" id="chatInput" placeholder="追问关于这篇论文的问题...">
-            <button onclick="sendChat('${paper.id}')">发送</button>
-          </div>
-        </div>
-      </div>
-    `;
-  } catch {
-    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">加载失败，请稍后重试</p>`;
   }
+  app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px"><button onclick="renderPaper('${id}')">点击重试</button></p>`;
 }
 
 function toggleExplain(paperId) {
@@ -460,17 +490,27 @@ function renderFavorites() {
   
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  fetchJson(`/api/papers?ids=${[...favorites].join(",")}`).then(({ entries }) => {
-    app.innerHTML = `
-      <h1 class="page-title">我的收藏</h1>
-      <p class="page-subtitle">共 ${entries.length} 篇论文</p>
-      <div class="papers-list">
-        ${entries.map(renderPaperRow).join("")}
-      </div>
-    `;
-  }).catch(() => {
-    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">加载失败，请稍后重试</p>`;
-  });
+  let retries = 2;
+  (async function fetchWithRetry() {
+    try {
+      const { entries } = await fetchJson(`/api/papers?ids=${[...favorites].join(",")}`);
+      app.innerHTML = `
+        <h1 class="page-title">我的收藏</h1>
+        <p class="page-subtitle">共 ${entries.length} 篇论文</p>
+        <div class="papers-list">
+          ${entries.map(renderPaperRow).join("")}
+        </div>
+      `;
+    } catch {
+      retries--;
+      if (retries >= 0) {
+        await new Promise(r => setTimeout(r, 1000));
+        fetchWithRetry();
+      } else {
+        app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px"><button onclick="renderFavorites()">点击重试</button></p>`;
+      }
+    }
+  })();
 }
 
 function updateNav(path) {
