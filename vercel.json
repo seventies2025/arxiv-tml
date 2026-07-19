@@ -7,12 +7,28 @@
       "config": {
         "maxDuration": 300
       }
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/arxiv/(.*)",
       "dest": "https://export.arxiv.org/api/$1"
+    },
+    {
+      "src": "/styles.css",
+      "dest": "/public/styles.css"
+    },
+    {
+      "src": "/app.js",
+      "dest": "/public/app.js"
+    },
+    {
+      "src": "/icons/(.*)",
+      "dest": "/public/icons/$1"
     },
     {
       "src": "/(.*)",
