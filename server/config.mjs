@@ -11,12 +11,14 @@ try {
   }
 } catch {}
 
+const isVercel = !!process.env.VERCEL;
+
 export const config = {
   deepseekApiKey: env.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY || "",
   deepseekBaseUrl: env.DEEPSEEK_BASE_URL || process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com",
   deepseekModel: env.DEEPSEEK_MODEL || process.env.DEEPSEEK_MODEL || "deepseek-v4-flash",
   port: Number(env.PORT || process.env.PORT || 4174),
-  host: env.HOST || process.env.HOST || "127.0.0.1",
+  host: env.HOST || process.env.HOST || (isVercel ? "0.0.0.0" : "127.0.0.1"),
   publicBaseUrl: env.PUBLIC_BASE_URL || process.env.PUBLIC_BASE_URL || "https://arxiv-tml.example.com",
-  storageDir: env.STORAGE_DIR || process.env.STORAGE_DIR || "storage"
+  storageDir: env.STORAGE_DIR || process.env.STORAGE_DIR || (isVercel ? "/tmp/storage" : "storage")
 };

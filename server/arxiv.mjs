@@ -256,8 +256,12 @@ export async function latestPapers({ start = 0, max = 20 } = {}) {
 export async function getPaper(id) {
   const parsed = normalizeArxivId(id);
   if (!parsed) return null;
-  const { entries } = await runQuery({ id_list: parsed.id, max_results: "1" }, TTL.paper);
-  return entries[0] || null;
+  try {
+    const { entries } = await runQuery({ id_list: parsed.id, max_results: "1" }, TTL.paper);
+    return entries[0] || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getPapersByIds(ids) {
