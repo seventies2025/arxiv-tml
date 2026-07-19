@@ -2,6 +2,10 @@
   "version": 2,
   "builds": [
     {
+      "src": "api/topic.mjs",
+      "use": "@vercel/edge"
+    },
+    {
       "src": "api/index.mjs",
       "use": "@vercel/node",
       "config": {
@@ -10,6 +14,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/topic",
+      "dest": "api/topic.mjs"
+    },
     {
       "src": "/(.*)",
       "dest": "api/index.mjs"
