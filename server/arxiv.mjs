@@ -27,6 +27,9 @@ function pickUa() {
 
 const MAX_ATTEMPTS = 4;
 
+const isVercel = !!process.env.VERCEL;
+const FETCH_TIMEOUT = isVercel ? 8000 : 35000;
+
 function enqueueFetch(url) {
   const task = queueTail.then(async () => {
     let lastError = null;
@@ -38,7 +41,7 @@ function enqueueFetch(url) {
       try {
         res = await fetch(url, {
           headers: { "User-Agent": pickUa() },
-          signal: AbortSignal.timeout(35000)
+          signal: AbortSignal.timeout(FETCH_TIMEOUT)
         });
       } catch (error) {
         lastError = error;

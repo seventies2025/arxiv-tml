@@ -64,9 +64,15 @@ function html(res, content, meta) {
 
 export async function handleRequest(req, res) {
   await loadIndexHtml();
-  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const protocol = req.headers["x-forwarded-proto"] || "http";
+  const host = req.headers.host || "localhost";
+  let requestUrl = req.url || "/";
+  if (requestUrl.startsWith("http://") || requestUrl.startsWith("https://")) {
+    requestUrl = new URL(requestUrl).pathname + (new URL(requestUrl).search || "");
+  }
+  const url = new URL(requestUrl, `${protocol}://${host}`);
   const pathname = url.pathname;
-  const method = req.method.toUpperCase();
+  const method = (req.method || "GET").toUpperCase();
 
   if (pathname.startsWith("/api/")) {
     res.setHeader("Access-Control-Allow-Origin", "*");
