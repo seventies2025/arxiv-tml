@@ -167,7 +167,12 @@ export async function handleRequest(req, res) {
       }
     } catch (error) {
       console.error("API error:", error);
-      json(res, { error: "Internal server error" }, 500);
+      const isVercel = !!process.env.VERCEL;
+      json(res, { 
+        error: isVercel ? "Service unavailable" : "Internal server error",
+        message: isVercel ? "Serverless timeout or external API error" : error.message,
+        timestamp: Date.now()
+      }, 503);
     }
     return;
   }
