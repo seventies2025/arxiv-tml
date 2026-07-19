@@ -4,7 +4,8 @@ import path from "node:path";
 import { config } from "./config.mjs";
 import { searchPapers as arxivSearch } from "./arxiv.mjs";
 
-const translateDir = path.join(config.storageDir, "translate");
+const __dirname = path.dirname(import.meta.url).replace("file://", "");
+const translateDir = path.join(__dirname, "../", config.storageDir, "translate");
 
 export function aiEnabled() {
   return Boolean(config.deepseekApiKey);

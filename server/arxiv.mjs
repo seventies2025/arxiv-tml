@@ -58,7 +58,8 @@ function enqueueFetch(url) {
   return task;
 }
 
-const cacheDir = path.join(config.storageDir, "cache");
+const __dirname = path.dirname(import.meta.url).replace("file://", "");
+const cacheDir = path.join(__dirname, "../", config.storageDir, "cache");
 const inflight = new Map();
 
 function cachePath(key, ttlMs) {

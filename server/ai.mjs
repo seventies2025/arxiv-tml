@@ -2,8 +2,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { config } from "./config.mjs";
 
-const FEATURED_FILE = path.join(config.storageDir, "featured.json");
-const explainDir = path.join(config.storageDir, "explain");
+const __dirname = path.dirname(import.meta.url).replace("file://", "");
+const FEATURED_FILE = path.join(__dirname, "../", config.storageDir, "featured.json");
+const explainDir = path.join(__dirname, "../", config.storageDir, "explain");
 const FEATURED_TTL_MS = 24 * 60 * 60 * 1000;
 
 export function aiEnabled() {
@@ -279,7 +280,7 @@ export async function generateFeatured(pool) {
     }));
   if (!items.length) throw new Error("empty_picks");
   const payload = { expires: Date.now() + FEATURED_TTL_MS, generatedAt: new Date().toISOString(), picks: items };
-  await mkdir(config.storageDir, { recursive: true });
+  await mkdir(path.join(__dirname, "../", config.storageDir), { recursive: true });
   await writeFile(FEATURED_FILE, JSON.stringify(payload), "utf8").catch(() => {});
   return payload;
 }

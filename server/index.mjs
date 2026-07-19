@@ -9,8 +9,9 @@ import { aiEnabled, streamExplain, streamChat, readFeatured, generateFeatured } 
 import { discoverPapers } from "./discover.mjs";
 import { pageMeta, sitemapXml, robotsTxt } from "./seo.mjs";
 
-const PUBLIC_DIR = path.join(process.cwd(), "public");
-const STORAGE_DIR = path.join(process.cwd(), config.storageDir);
+const __dirname = path.dirname(import.meta.url).replace("file://", "");
+const PUBLIC_DIR = path.join(__dirname, "../public");
+const STORAGE_DIR = path.join(__dirname, "../", config.storageDir);
 
 let indexHtml = "";
 let indexMtime = 0;
