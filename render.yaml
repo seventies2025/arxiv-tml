@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: arxiv-tml
+    env: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        fromService:
+          name: arxiv-tml
+          type: web
+          envVarKey: PORT
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: PUBLIC_BASE_URL
+        value: https://arxiv-tml.onrender.com

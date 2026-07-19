@@ -1,0 +1,16 @@
+{
+  "name": "arxiv-tml",
+  "version": "1.0.0",
+  "description": "理论机器学习与量子机器学习学术资源整合网站",
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.mjs",
+    "start": "node server/index.mjs",
+    "check": "node scripts/check.mjs",
+    "warm-featured": "node scripts/warm-featured.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
