@@ -200,37 +200,47 @@ async function renderTopics() {
 
 async function renderTopic(topicId) {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
-  const { topic, entries, total } = await fetchJson(`/api/topic?id=${topicId}&max=20`);
   
-  if (!topic) {
-    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">主题不存在</p>`;
-    return;
-  }
+  try {
+    const { topic, entries, total } = await fetchJson(`/api/topic?id=${topicId}&max=20`);
+    
+    if (!topic) {
+      app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">主题不存在</p>`;
+      return;
+    }
 
-  app.innerHTML = `
-    <div class="topic-header">
-      <div class="topic-icon" style="font-size:48px">${topic.icon}</div>
-      <h1 class="page-title">${topic.name}</h1>
-      <p class="page-subtitle">${topic.nameEn} · ${topic.description}</p>
-    </div>
-    <div class="papers-list">
-      ${entries.map(renderPaperRow).join("")}
-    </div>
-    ${total > 20 ? `<div class="pagination"><button onclick="loadMoreTopic('${topicId}', 20)">加载更多</button></div>` : ""}
-  `;
+    app.innerHTML = `
+      <div class="topic-header">
+        <div class="topic-icon" style="font-size:48px">${topic.icon}</div>
+        <h1 class="page-title">${topic.name}</h1>
+        <p class="page-subtitle">${topic.nameEn} · ${topic.description}</p>
+      </div>
+      <div class="papers-list">
+        ${entries.map(renderPaperRow).join("")}
+      </div>
+      ${total > 20 ? `<div class="pagination"><button onclick="loadMoreTopic('${topicId}', 20)">加载更多</button></div>` : ""}
+    `;
+  } catch {
+    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">加载失败，请稍后重试</p>`;
+  }
 }
 
 async function renderClassics() {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
-  const { entries } = await fetchJson("/api/classics");
   
-  app.innerHTML = `
-    <h1 class="page-title">经典论文</h1>
-    <p class="page-subtitle">理论机器学习与量子机器学习领域的里程碑式著作</p>
-    <div class="classics-timeline">
-      ${entries.map(renderClassicItem).join("")}
-    </div>
-  `;
+  try {
+    const { entries } = await fetchJson("/api/classics");
+    
+    app.innerHTML = `
+      <h1 class="page-title">经典论文</h1>
+      <p class="page-subtitle">理论机器学习与量子机器学习领域的里程碑式著作</p>
+      <div class="classics-timeline">
+        ${entries.map(renderClassicItem).join("")}
+      </div>
+    `;
+  } catch {
+    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">加载失败，请稍后重试</p>`;
+  }
 }
 
 async function renderDiscover() {
@@ -247,9 +257,11 @@ async function renderDiscover() {
     </div>
   `;
   
-  const { terms } = await fetchJson("/api/trends");
-  const trendContainer = document.getElementById("trendTerms");
-  trendContainer.innerHTML = terms.map(t => `<span class="trend-term" onclick="searchDiscover('${t}')">${t}</span>`).join("");
+  try {
+    const { terms } = await fetchJson("/api/trends");
+    const trendContainer = document.getElementById("trendTerms");
+    trendContainer.innerHTML = terms.map(t => `<span class="trend-term" onclick="searchDiscover('${t}')">${t}</span>`).join("");
+  } catch {}
 }
 
 async function searchDiscover(query) {
@@ -264,81 +276,93 @@ async function performDiscover() {
   const resultsContainer = document.getElementById("discoverResults");
   resultsContainer.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  const { entries } = await fetchJson(`/api/discover?q=${encodeURIComponent(query)}&max=20`);
-  
-  if (entries.length === 0) {
-    resultsContainer.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">未找到相关论文</p>`;
-    return;
+  try {
+    const { entries } = await fetchJson(`/api/discover?q=${encodeURIComponent(query)}&max=20`);
+    
+    if (entries.length === 0) {
+      resultsContainer.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">未找到相关论文</p>`;
+      return;
+    }
+    
+    resultsContainer.innerHTML = `
+      <h2 class="section-title">搜索结果：${query}</h2>
+      <div class="papers-list">
+        ${entries.map(renderPaperRow).join("")}
+      </div>
+    `;
+  } catch {
+    resultsContainer.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">搜索失败，请稍后重试</p>`;
   }
-  
-  resultsContainer.innerHTML = `
-    <h2 class="section-title">搜索结果：${query}</h2>
-    <div class="papers-list">
-      ${entries.map(renderPaperRow).join("")}
-    </div>
-  `;
 }
 
 async function renderSearch(query) {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  const { entries } = await fetchJson(`/api/search?q=${encodeURIComponent(query)}&max=20`);
-  
-  app.innerHTML = `
-    <h1 class="page-title">搜索结果</h1>
-    <p class="page-subtitle">"${query}"</p>
-    ${entries.length === 0 ? `<p style="text-align:center;color:var(--ink-3);padding:40px">未找到相关论文</p>` : `
-      <div class="papers-list">
-        ${entries.map(renderPaperRow).join("")}
-      </div>
-    `}
-  `;
+  try {
+    const { entries } = await fetchJson(`/api/search?q=${encodeURIComponent(query)}&max=20`);
+    
+    app.innerHTML = `
+      <h1 class="page-title">搜索结果</h1>
+      <p class="page-subtitle">"${query}"</p>
+      ${entries.length === 0 ? `<p style="text-align:center;color:var(--ink-3);padding:40px">未找到相关论文</p>` : `
+        <div class="papers-list">
+          ${entries.map(renderPaperRow).join("")}
+        </div>
+      `}
+    `;
+  } catch {
+    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">搜索失败，请稍后重试</p>`;
+  }
 }
 
 async function renderPaper(id) {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  const paper = await fetchJson(`/api/paper?id=${id}`);
-  
-  if (!paper) {
-    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">论文不存在</p>`;
-    return;
+  try {
+    const paper = await fetchJson(`/api/paper?id=${id}`);
+    
+    if (!paper) {
+      app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">论文不存在</p>`;
+      return;
+    }
+    
+    const isFavorite = favorites.has(paper.id);
+    
+    app.innerHTML = `
+      <div class="paper-detail">
+        <div class="paper-detail-main">
+          <h1 class="paper-detail-title">${paper.title}</h1>
+          ${paper.titleZh ? `<p class="paper-detail-title-zh">${paper.titleZh}</p>` : ""}
+          <p class="paper-detail-authors">${paper.authors.join(", ")}</p>
+          <div class="paper-detail-meta">
+            ${renderArxivId(paper.id, paper.version)}
+            <span class="paper-date">${formatDate(paper.published)}</span>
+            ${paper.categories.map(renderCategory).join("")}
+            ${paper.journalRef ? `<span class="paper-category">${paper.journalRef}</span>` : ""}
+          </div>
+          <p class="paper-detail-summary">${paper.summary}</p>
+          <div class="paper-detail-links">
+            <a href="${paper.links?.pdf || `https://arxiv.org/pdf/${paper.id}`}" target="_blank" class="primary">下载 PDF</a>
+            <a href="${paper.links?.abs || `https://arxiv.org/abs/${paper.id}`}" target="_blank" class="secondary">arXiv 页面</a>
+            <a href="${paper.links?.html || `https://arxiv.org/html/${paper.id}${paper.version || ""}`}" target="_blank" class="secondary">HTML 全文</a>
+          </div>
+        </div>
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <h3 class="ai-panel-title">AI 解读</h3>
+            <button class="ai-panel-toggle" onclick="toggleExplain('${paper.id}')">生成解读</button>
+          </div>
+          <div class="ai-content" id="aiContent"></div>
+          <div class="ai-chat">
+            <input type="text" id="chatInput" placeholder="追问关于这篇论文的问题...">
+            <button onclick="sendChat('${paper.id}')">发送</button>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch {
+    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">加载失败，请稍后重试</p>`;
   }
-  
-  const isFavorite = favorites.has(paper.id);
-  
-  app.innerHTML = `
-    <div class="paper-detail">
-      <div class="paper-detail-main">
-        <h1 class="paper-detail-title">${paper.title}</h1>
-        ${paper.titleZh ? `<p class="paper-detail-title-zh">${paper.titleZh}</p>` : ""}
-        <p class="paper-detail-authors">${paper.authors.join(", ")}</p>
-        <div class="paper-detail-meta">
-          ${renderArxivId(paper.id, paper.version)}
-          <span class="paper-date">${formatDate(paper.published)}</span>
-          ${paper.categories.map(renderCategory).join("")}
-          ${paper.journalRef ? `<span class="paper-category">${paper.journalRef}</span>` : ""}
-        </div>
-        <p class="paper-detail-summary">${paper.summary}</p>
-        <div class="paper-detail-links">
-          <a href="${paper.links?.pdf || `https://arxiv.org/pdf/${paper.id}`}" target="_blank" class="primary">下载 PDF</a>
-          <a href="${paper.links?.abs || `https://arxiv.org/abs/${paper.id}`}" target="_blank" class="secondary">arXiv 页面</a>
-          <a href="${paper.links?.html || `https://arxiv.org/html/${paper.id}${paper.version || ""}`}" target="_blank" class="secondary">HTML 全文</a>
-        </div>
-      </div>
-      <div class="ai-panel">
-        <div class="ai-panel-header">
-          <h3 class="ai-panel-title">AI 解读</h3>
-          <button class="ai-panel-toggle" onclick="toggleExplain('${paper.id}')">生成解读</button>
-        </div>
-        <div class="ai-content" id="aiContent"></div>
-        <div class="ai-chat">
-          <input type="text" id="chatInput" placeholder="追问关于这篇论文的问题...">
-          <button onclick="sendChat('${paper.id}')">发送</button>
-        </div>
-      </div>
-    </div>
-  `;
 }
 
 function toggleExplain(paperId) {
@@ -444,6 +468,8 @@ function renderFavorites() {
         ${entries.map(renderPaperRow).join("")}
       </div>
     `;
+  }).catch(() => {
+    app.innerHTML = `<p style="text-align:center;color:var(--ink-3);padding:40px">加载失败，请稍后重试</p>`;
   });
 }
 
