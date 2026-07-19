@@ -147,21 +147,22 @@ const INDEX_HTML = `<!DOCTYPE html>
 <body>
   <header id="siteHeader" class="site-header">
     <div class="header-inner">
-      <div class="header-left">
-        <a href="/" data-link class="site-logo">arXiv-TML</a>
-      </div>
-      <nav class="header-nav">
-        <a href="/" data-link>首页</a>
-        <a href="/topics" data-link>主题</a>
-        <a href="/classics" data-link>经典论文</a>
-        <a href="/discover" data-link>搜索发现</a>
-        <a href="/favorites" data-link>收藏</a>
+      <a href="/" data-link class="brand">
+        <span class="brand-mark">∀</span>
+        <span class="brand-name">arXiv<em>-TML</em></span>
+      </a>
+      <nav class="main-nav">
+        <a href="/" data-link data-nav="home">首页</a>
+        <a href="/topics" data-link data-nav="topics">主题</a>
+        <a href="/classics" data-link data-nav="classics">经典论文</a>
+        <a href="/discover" data-link data-nav="discover">搜索发现</a>
+        <a href="/favorites" data-link data-nav="favorites">收藏</a>
       </nav>
       <form id="headerSearch" class="header-search">
+        <span class="search-icon">🔍</span>
         <input type="text" placeholder="搜论文、作者、arXiv ID…" autocomplete="off">
-        <button type="submit">搜索</button>
+        <button type="submit" class="search-submit">→</button>
       </form>
-      <a href="https://arxiv.org" target="_blank" class="header-arxiv">arXiv.org</a>
     </div>
   </header>
   <main id="app" class="app"></main>

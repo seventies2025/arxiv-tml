@@ -7,10 +7,6 @@
       "config": {
         "maxDuration": 300
       }
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -19,16 +15,24 @@
       "dest": "https://export.arxiv.org/api/$1"
     },
     {
+      "src": "/@vite/client",
+      "status": 404
+    },
+    {
       "src": "/styles.css",
-      "dest": "/public/styles.css"
+      "headers": {
+        "Content-Type": "text/css; charset=utf-8",
+        "Cache-Control": "public, max-age=3600"
+      },
+      "continue": true
     },
     {
       "src": "/app.js",
-      "dest": "/public/app.js"
-    },
-    {
-      "src": "/icons/(.*)",
-      "dest": "/public/icons/$1"
+      "headers": {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Cache-Control": "public, max-age=3600"
+      },
+      "continue": true
     },
     {
       "src": "/(.*)",
