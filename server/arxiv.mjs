@@ -5,9 +5,11 @@ import { config } from "./config.mjs";
 
 const ARXIV_API = "https://export.arxiv.org/api/query";
 
+const isVercel = !!process.env.VERCEL;
+
 let queueTail = Promise.resolve();
 let lastFetchAt = 0;
-const MIN_INTERVAL_MS = 3100;
+const MIN_INTERVAL_MS = isVercel ? 500 : 3100;
 
 const USER_AGENTS = [
   "arxiv-tml/1.0 (+https://arxiv-tml.example.com)",
@@ -25,9 +27,7 @@ function pickUa() {
   return USER_AGENTS[uaCursor];
 }
 
-const MAX_ATTEMPTS = 4;
-
-const isVercel = !!process.env.VERCEL;
+const MAX_ATTEMPTS = isVercel ? 2 : 4;
 const FETCH_TIMEOUT = isVercel ? 8000 : 35000;
 
 function enqueueFetch(url) {
