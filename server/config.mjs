@@ -18,5 +18,5 @@ export const config = {
   port: Number(env.PORT || process.env.PORT || 4174),
   host: env.HOST || process.env.HOST || "127.0.0.1",
   publicBaseUrl: env.PUBLIC_BASE_URL || process.env.PUBLIC_BASE_URL || "https://arxiv-tml.example.com",
-  storageDir: env.STORAGE_DIR || process.env.STORAGE_DIR || "storage"
+  storageDir: env.STORAGE_DIR || process.env.STORAGE_DIR || (process.env.NODE_ENV === "production" && process.env.VERCEL ? "/tmp/storage" : "storage")
 };
