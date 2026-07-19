@@ -135,11 +135,20 @@ async function handleRequest(req, res) {
       } else if (pathname === "/api/featured") {
         let featured = await readFeatured();
         if (!featured) {
-          const pool = await recentPool(["cs.LG", "stat.ML", "quant-ph", "cs.AI"], { perCategory: 18 });
-          featured = await generateFeatured(pool);
+          if (!aiEnabled()) {
+            json(res, { picks: [], aiEnabled: false });
+            return;
+          }
+          try {
+            const pool = await recentPool(["cs.LG", "stat.ML", "quant-ph", "cs.AI"], { perCategory: 12 });
+            featured = await generateFeatured(pool);
+          } catch {
+            json(res, { picks: [], aiEnabled: true });
+            return;
+          }
         }
         if (!featured) {
-          json(res, { picks: [], aiEnabled: false });
+          json(res, { picks: [], aiEnabled: aiEnabled() });
           return;
         }
         json(res, { ...featured, picks: featured.picks.map((p) => ({ ...p, paper: slimPaper(p.paper) })), aiEnabled: true });

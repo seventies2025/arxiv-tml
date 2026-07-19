@@ -271,21 +271,20 @@ export async function getPapersByIds(ids) {
 
 export async function recentPool(categories, { perCategory = 12 } = {}) {
   const pool = [];
-  for (const cat of categories) {
-    try {
-      const { entries } = await runQuery(
-        {
-          search_query: `cat:${cat}`,
-          start: "0",
-          max_results: String(perCategory),
-          sortBy: "submittedDate",
-          sortOrder: "descending"
-        },
-        TTL.recent
-      );
-      pool.push(...entries);
-    } catch {}
-  }
+  const combinedQuery = categories.map((cat) => `cat:${cat}`).join(" OR ");
+  try {
+    const { entries } = await runQuery(
+      {
+        search_query: combinedQuery,
+        start: "0",
+        max_results: String(categories.length * perCategory),
+        sortBy: "submittedDate",
+        sortOrder: "descending"
+      },
+      TTL.recent
+    );
+    pool.push(...entries);
+  } catch {}
   const seen = new Set();
   return pool
     .filter((paper) => (seen.has(paper.id) ? false : seen.add(paper.id)))

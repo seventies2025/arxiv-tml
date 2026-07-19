@@ -134,11 +134,15 @@ function renderClassicItem(item) {
 async function renderHome() {
   app.innerHTML = `<div class="page-loading"><span></span><span></span><span></span></div>`;
   
-  const [featured, topics, latest] = await Promise.all([
+  const results = await Promise.allSettled([
     fetchJson("/api/featured"),
     fetchJson("/api/topics"),
     fetchJson("/api/latest?max=10")
   ]);
+  
+  const featured = results[0].status === "fulfilled" ? results[0].value : { picks: [] };
+  const topics = results[1].status === "fulfilled" ? results[1].value : { topics: [] };
+  const latest = results[2].status === "fulfilled" ? results[2].value : { entries: [] };
 
   let featuredHtml = "";
   if (featured.picks && featured.picks.length > 0) {
