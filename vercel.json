@@ -2,14 +2,21 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/index.mjs",
-      "use": "@vercel/node"
+      "src": "api/index.mjs",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 30
+      }
     }
   ],
   "routes": [
     {
+      "src": "/api/arxiv/(.*)",
+      "dest": "https://export.arxiv.org/api/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "server/index.mjs"
+      "dest": "api/index.mjs"
     }
   ],
   "env": {
