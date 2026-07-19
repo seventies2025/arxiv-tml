@@ -1,7 +1,3 @@
-export const config = {
-  runtime: "edge"
-};
-
 import { TOPICS, TREND_TERMS } from "../server/topics.mjs";
 import { pageMeta, sitemapXml, robotsTxt } from "../server/seo.mjs";
 
@@ -116,7 +112,7 @@ async function fetchArxiv(params) {
   const query = new URLSearchParams(params).toString();
   const res = await fetch(`${ARXIV_API}?${query}`, {
     headers: { "User-Agent": "arxiv-tml/1.0 (+https://arxiv-tml.vercel.app)" },
-    signal: AbortSignal.timeout(8000)
+    signal: AbortSignal.timeout(30000)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const xml = await res.text();
@@ -185,42 +181,34 @@ function html(content, meta) {
     .replace(/property="og:url"/g, () => `content="${meta.ogUrl}" property="og:url"`);
 }
 
-export default async function handler(req) {
-  const url = new URL(req.url);
-  const pathname = url.pathname;
-  const method = (req.method || "GET").toUpperCase();
+export default async function handler(req, res) {
+  const { url, method = "GET" } = req;
+  const parsedUrl = new URL(url, `https://${req.headers.host}`);
+  const pathname = parsedUrl.pathname;
+  const methodUpper = method.toUpperCase();
 
   if (pathname.startsWith("/api/")) {
-    if (method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST",
-          "Access-Control-Allow-Headers": "Content-Type"
-        }
-      });
+    if (methodUpper === "OPTIONS") {
+      return res.status(204).setHeader("Access-Control-Allow-Origin", "*")
+        .setHeader("Access-Control-Allow-Methods", "GET, POST")
+        .setHeader("Access-Control-Allow-Headers", "Content-Type").end();
     }
 
     try {
       if (pathname === "/api/topics") {
-        return new Response(JSON.stringify({ topics: TOPICS }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json({ topics: TOPICS });
       }
 
       if (pathname === "/api/topic") {
-        const topicId = url.searchParams.get("id");
+        const topicId = parsedUrl.searchParams.get("id");
         const topic = TOPICS.find((t) => t.id === topicId);
         if (!topic) {
-          return new Response(JSON.stringify({ error: "Topic not found" }), {
-            status: 404,
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-          });
+          return res.status(404).setHeader("Content-Type", "application/json")
+            .setHeader("Access-Control-Allow-Origin", "*").json({ error: "Topic not found" });
         }
-        const start = Number(url.searchParams.get("start") || 0);
-        const max = Number(url.searchParams.get("max") || 20);
+        const start = Number(parsedUrl.searchParams.get("start") || 0);
+        const max = Number(parsedUrl.searchParams.get("max") || 20);
         const result = await fetchArxiv({
           search_query: topic.query,
           start: String(Math.max(0, start)),
@@ -228,19 +216,17 @@ export default async function handler(req) {
           sortBy: topic.sort || "submittedDate",
           sortOrder: "descending"
         });
-        return new Response(JSON.stringify({
-          topic,
-          ...result,
-          entries: result.entries.map(slimPaper)
-        }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json({
+            topic,
+            ...result,
+            entries: result.entries.map(slimPaper)
+          });
       }
 
       if (pathname === "/api/latest") {
-        const start = Number(url.searchParams.get("start") || 0);
-        const max = Number(url.searchParams.get("max") || 20);
+        const start = Number(parsedUrl.searchParams.get("start") || 0);
+        const max = Number(parsedUrl.searchParams.get("max") || 20);
         const result = await fetchArxiv({
           search_query: "cat:cs.LG OR cat:stat.ML OR cat:quant-ph",
           start: String(Math.max(0, start)),
@@ -248,27 +234,23 @@ export default async function handler(req) {
           sortBy: "submittedDate",
           sortOrder: "descending"
         });
-        return new Response(JSON.stringify({
-          ...result,
-          entries: result.entries.map(slimPaper)
-        }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json({
+            ...result,
+            entries: result.entries.map(slimPaper)
+          });
       }
 
       if (pathname === "/api/search") {
-        const q = url.searchParams.get("q") || "";
-        const cat = url.searchParams.get("cat") || "";
-        const sort = url.searchParams.get("sort") || "relevance";
-        const start = Number(url.searchParams.get("start") || 0);
-        const max = Number(url.searchParams.get("max") || 20);
+        const q = parsedUrl.searchParams.get("q") || "";
+        const cat = parsedUrl.searchParams.get("cat") || "";
+        const sort = parsedUrl.searchParams.get("sort") || "relevance";
+        const start = Number(parsedUrl.searchParams.get("start") || 0);
+        const max = Number(parsedUrl.searchParams.get("max") || 20);
         const keyword = String(q || "").trim();
         if (!keyword) {
-          return new Response(JSON.stringify({ total: 0, entries: [] }), {
-            status: 200,
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-          });
+          return res.status(200).setHeader("Content-Type", "application/json")
+            .setHeader("Access-Control-Allow-Origin", "*").json({ total: 0, entries: [] });
         }
         const phrase = keyword.length > 2 && !/\s/.test(keyword) ? `all:"${keyword}"` : `all:${keyword}`;
         const searchQuery = cat ? `(${phrase}) AND cat:${cat}` : phrase;
@@ -279,120 +261,90 @@ export default async function handler(req) {
           sortBy: sort === "date" ? "submittedDate" : sort === "updated" ? "lastUpdatedDate" : "relevance",
           sortOrder: "descending"
         });
-        return new Response(JSON.stringify({
-          ...result,
-          entries: result.entries.map(slimPaper)
-        }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json({
+            ...result,
+            entries: result.entries.map(slimPaper)
+          });
       }
 
       if (pathname === "/api/paper") {
-        const id = url.searchParams.get("id");
+        const id = parsedUrl.searchParams.get("id");
         if (!id) {
-          return new Response(JSON.stringify({ error: "Missing paper ID" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-          });
+          return res.status(400).setHeader("Content-Type", "application/json")
+            .setHeader("Access-Control-Allow-Origin", "*").json({ error: "Missing paper ID" });
         }
         const result = await fetchArxiv({
           id_list: id
         });
         if (!result.entries || result.entries.length === 0) {
-          return new Response(JSON.stringify({ error: "Paper not found" }), {
-            status: 404,
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-          });
+          return res.status(404).setHeader("Content-Type", "application/json")
+            .setHeader("Access-Control-Allow-Origin", "*").json({ error: "Paper not found" });
         }
-        return new Response(JSON.stringify(result.entries[0]), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json(result.entries[0]);
       }
 
       if (pathname === "/api/classics") {
-        return new Response(JSON.stringify({ entries: CLASSICS_DATA }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json({ entries: CLASSICS_DATA });
       }
 
       if (pathname === "/api/trends") {
-        return new Response(JSON.stringify({ terms: TREND_TERMS }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json({ terms: TREND_TERMS });
       }
 
       if (pathname === "/api/ai-enabled") {
-        return new Response(JSON.stringify({ enabled: false }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json({ enabled: false });
       }
 
       if (pathname === "/api/featured") {
-        return new Response(JSON.stringify({ picks: [], aiEnabled: false }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return res.status(200).setHeader("Content-Type", "application/json")
+          .setHeader("Access-Control-Allow-Origin", "*").json({ picks: [], aiEnabled: false });
       }
 
-      return new Response(JSON.stringify({ error: "Not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-      });
+      return res.status(404).setHeader("Content-Type", "application/json")
+        .setHeader("Access-Control-Allow-Origin", "*").json({ error: "Not found" });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: "Service unavailable",
-        message: error.message
-      }), {
-        status: 503,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-      });
+      return res.status(503).setHeader("Content-Type", "application/json")
+        .setHeader("Access-Control-Allow-Origin", "*").json({
+          error: "Service unavailable",
+          message: error.message
+        });
     }
   }
 
   if (pathname === "/sitemap.xml") {
-    return new Response(sitemapXml(), {
-      status: 200,
-      headers: { "Content-Type": "application/xml; charset=utf-8" }
-    });
+    return res.status(200).setHeader("Content-Type", "application/xml; charset=utf-8").send(sitemapXml());
   }
 
   if (pathname === "/robots.txt") {
-    return new Response(robotsTxt(), {
-      status: 200,
-      headers: { "Content-Type": "text/plain; charset=utf-8" }
-    });
+    return res.status(200).setHeader("Content-Type", "text/plain; charset=utf-8").send(robotsTxt());
   }
 
   if (pathname === "/styles.css" || pathname === "/app.js") {
     const staticUrl = `https://raw.githubusercontent.com/seventies2025/arxiv-tml/main/public${pathname}`;
-    const res = await fetch(staticUrl);
-    if (!res.ok) {
-      return new Response("Not found", { status: 404 });
+    const staticRes = await fetch(staticUrl);
+    if (!staticRes.ok) {
+      return res.status(404).send("Not found");
     }
-    const content = await res.text();
+    const content = await staticRes.text();
     const contentType = pathname.endsWith(".css") ? "text/css; charset=utf-8" : "application/javascript; charset=utf-8";
-    return new Response(content, {
-      status: 200,
-      headers: { "Content-Type": contentType, "Cache-Control": "public, max-age=3600" }
-    });
+    return res.status(200).setHeader("Content-Type", contentType)
+      .setHeader("Cache-Control", "public, max-age=3600").send(content);
   }
 
   if (pathname.startsWith("/icons/")) {
     const staticUrl = `https://raw.githubusercontent.com/seventies2025/arxiv-tml/main/public${pathname}`;
-    const res = await fetch(staticUrl);
-    if (!res.ok) {
-      return new Response("Not found", { status: 404 });
+    const staticRes = await fetch(staticUrl);
+    if (!staticRes.ok) {
+      return res.status(404).send("Not found");
     }
-    const content = await res.blob();
-    return new Response(content, {
-      status: 200,
-      headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=86400" }
-    });
+    const buffer = await staticRes.buffer();
+    return res.status(200).setHeader("Content-Type", "image/svg+xml")
+      .setHeader("Cache-Control", "public, max-age=86400").send(buffer);
   }
 
   let pageMetaInfo;
@@ -409,7 +361,7 @@ export default async function handler(req) {
   } else if (pathname === "/discover") {
     pageMetaInfo = pageMeta("discover");
   } else if (pathname === "/search") {
-    const q = url.searchParams.get("q") || "";
+    const q = parsedUrl.searchParams.get("q") || "";
     pageMetaInfo = pageMeta("search", { query: q });
   } else if (pathname.startsWith("/paper/")) {
     const id = pathname.split("/")[2];
@@ -420,8 +372,5 @@ export default async function handler(req) {
     pageMetaInfo = pageMeta("home");
   }
 
-  return new Response(html("", pageMetaInfo), {
-    status: 200,
-    headers: { "Content-Type": "text/html; charset=utf-8" }
-  });
+  return res.status(200).setHeader("Content-Type", "text/html; charset=utf-8").send(html("", pageMetaInfo));
 }
